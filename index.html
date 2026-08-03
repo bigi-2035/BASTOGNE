@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bastogne 2035</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #4a4a52;
+      --surface:  #3d3d44;
+      --water:    #7ab3c8;
+      --plants:   #7a9e6e;
+      --build:    #c8b98a;
+      --care:     #c87a5e;
+      --text:     #f2ede4;
+      --muted:    #a09a8f;
+      --radius:   12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 2rem 2rem 1rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 480px;
+      margin-inline: auto;
+      line-height: 1.6;
+    }
+
+    /* ── MAP AREA ── */
+    #map-container {
+      position: relative;
+      width: min(720px, 95vw);
+      aspect-ratio: 4/3;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1.5rem auto;
+      cursor: crosshair;
+    }
+
+    /* placeholder grid until the real map image arrives */
+    #map-bg {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 0;
+    }
+
+    .zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      opacity: 0.35;
+      transition: opacity 0.2s;
+      cursor: pointer;
+      user-select: none;
+    }
+    .zone:hover { opacity: 0.6; }
+    .zone.active { opacity: 0.9; }
+
+    .zone[data-zone="acqua"]     { background: color-mix(in srgb, var(--water) 30%, var(--surface)); }
+    .zone[data-zone="piante"]    { background: color-mix(in srgb, var(--plants) 30%, var(--surface)); }
+    .zone[data-zone="strutture"] { background: color-mix(in srgb, var(--build) 30%, var(--surface)); }
+    .zone[data-zone="cura"]      { background: color-mix(in srgb, var(--care) 30%, var(--surface)); }
+
+    .zone-icon { font-size: 2rem; }
+    .zone-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    /* avatars drawn on top */
+    #avatar-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .avatar-dot {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid rgba(242,237,228,0.6);
+      overflow: hidden;
+      transform: translate(-50%, -50%);
+      background: var(--surface);
+    }
+    .avatar-dot canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── ZONE LEGEND ── */
+    #legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* ── MODAL / DRAWER ── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 10;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #modal-overlay.open { display: flex; }
+
+    #modal {
+      background: var(--surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 2rem;
+      width: min(480px, 100%);
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    #modal h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      margin-bottom: 0.25rem;
+    }
+
+    #modal p.zone-desc {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    /* name input */
+    #modal input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid rgba(242,237,228,0.15);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #modal input[type="text"]:focus {
+      border-color: rgba(242,237,228,0.4);
+    }
+    #modal input[type="text"]::placeholder { color: var(--muted); }
+
+    /* drawing canvas */
+    #draw-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    #draw-wrap label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      align-self: flex-start;
+    }
+
+    #draw-canvas {
+      border-radius: 50%;
+      cursor: crosshair;
+      background: var(--bg);
+      touch-action: none;
+    }
+
+    /* color picker row */
+    #color-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .color-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.1s;
+    }
+    .color-btn:hover { transform: scale(1.2); }
+    .color-btn.selected { border-color: var(--text); }
+
+    .tool-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 0.25rem;
+    }
+
+    .tool-btn {
+      background: var(--bg);
+      border: 1.5px solid rgba(242,237,228,0.15);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .tool-btn:hover { background: rgba(242,237,228,0.08); }
+
+    /* action buttons */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid rgba(242,237,228,0.2);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: rgba(242,237,228,0.4); }
+
+    /* ── GALLERY link ── */
+    #gallery-link {
+      margin: 0.5rem auto 2rem;
+      text-align: center;
+    }
+    #gallery-link a {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(160,154,143,0.3);
+      padding-bottom: 1px;
+      transition: color 0.15s;
+    }
+    #gallery-link a:hover { color: var(--text); }
+
+    /* ── TOOLTIP ── */
+    #tooltip {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid rgba(242,237,228,0.12);
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      color: var(--text);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+      z-index: 5;
+    }
+    #tooltip.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Bastogne 2035</h1>
+  <p>Scegli una zona della città e lascia il tuo segno — il tuo avatar si unirà a chi abita già quel luogo.</p>
+</header>
+
+<div id="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--water)"></div> Acqua</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--plants)"></div> Piante</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--build)"></div> Strutture</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--care)"></div> Cura</div>
+</div>
+
+<div id="map-container">
+  <div id="map-bg">
+    <div class="zone" data-zone="acqua"     onclick="openModal('acqua')">
+      <div class="zone-icon">💧</div>
+      <div class="zone-label">Acqua</div>
+    </div>
+    <div class="zone" data-zone="piante"    onclick="openModal('piante')">
+      <div class="zone-icon">🌿</div>
+      <div class="zone-label">Piante</div>
+    </div>
+    <div class="zone" data-zone="strutture" onclick="openModal('strutture')">
+      <div class="zone-icon">🪵</div>
+      <div class="zone-label">Strutture</div>
+    </div>
+    <div class="zone" data-zone="cura"      onclick="openModal('cura')">
+      <div class="zone-icon">🌸</div>
+      <div class="zone-label">Cura</div>
+    </div>
+  </div>
+  <div id="avatar-layer"></div>
+  <div id="tooltip"></div>
+</div>
+
+<div id="gallery-link">
+  <a href="gallery.html">Vedi tutti gli abitanti →</a>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="modal">
+    <h2 id="modal-title">Zona Acqua</h2>
+    <p class="zone-desc" id="modal-desc">Gestisci le risorse idriche del villaggio: raccolta, distribuzione, cura degli spazi acquatici condivisi.</p>
+
+    <input type="text" id="name-input" placeholder="Il tuo nome" maxlength="32" />
+
+    <div id="draw-wrap">
+      <label>Disegna il tuo avatar</label>
+      <canvas id="draw-canvas" width="120" height="120"></canvas>
+      <div id="color-row"></div>
+      <div class="tool-row">
+        <button class="tool-btn" onclick="clearCanvas()">↺ Ricomincia</button>
+        <button class="tool-btn" id="eraser-btn" onclick="toggleEraser()">Gomma</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn-primary" onclick="submitAvatar()">Posizionami sulla mappa</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── ZONE DATA ──
+  const zones = {
+    acqua:     { label: 'Zona Acqua',     desc: 'Gestisci le risorse idriche del villaggio: raccolta, distribuzione, cura degli spazi acquatici condivisi.', color: '#7ab3c8' },
+    piante:    { label: 'Zona Piante',    desc: 'Coltivi orti condivisi, conosci le erbe selvatiche, ti prendi cura del verde comune.', color: '#7a9e6e' },
+    strutture: { label: 'Zona Strutture', desc: 'Costruisci, ripari e mantieni gli spazi abitativi e le infrastrutture del villaggio.', color: '#c8b98a' },
+    cura:      { label: 'Zona Cura',      desc: 'Ti occupi delle persone: salute, relazioni, rituali collettivi che tengono insieme la comunità.', color: '#c87a5e' },
+  };
+
+  // zone bounds (percent of map container): tl, tr, bl, br
+  const zoneBounds = {
+    acqua:     { xMin: 0,   xMax: 50,  yMin: 0,  yMax: 50 },
+    piante:    { xMin: 50,  xMax: 100, yMin: 0,  yMax: 50 },
+    strutture: { xMin: 0,   xMax: 50,  yMin: 50, yMax: 100 },
+    cura:      { xMin: 50,  xMax: 100, yMin: 50, yMax: 100 },
+  };
+
+  // ── PALETTE ──
+  const palette = ['#f2ede4','#7ab3c8','#7a9e6e','#c8b98a','#c87a5e','#a09a8f','#4a4a52'];
+  let currentColor = palette[0];
+  let eraserMode   = false;
+
+  const colorRow = document.getElementById('color-row');
+  palette.forEach(hex => {
+    const btn = document.createElement('button');
+    btn.className = 'color-btn' + (hex === currentColor ? ' selected' : '');
+    btn.style.background = hex;
+    btn.title = hex;
+    btn.onclick = () => {
+      eraserMode = false;
+      document.getElementById('eraser-btn').style.opacity = '1';
+      currentColor = hex;
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    colorRow.appendChild(btn);
+  });
+
+  function toggleEraser() {
+    eraserMode = !eraserMode;
+    document.getElementById('eraser-btn').style.opacity = eraserMode ? '0.4' : '1';
+  }
+
+  // ── DRAWING CANVAS ──
+  const dc = document.getElementById('draw-canvas');
+  const ctx = dc.getContext('2d');
+  let drawing = false;
+
+  function getPos(e) {
+    const r = dc.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * (dc.width / r.width),
+             y: (src.clientY - r.top)  * (dc.height / r.height) };
+  }
+
+  function startDraw(e) { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+  function doDraw(e)    {
+    e.preventDefault();
+    if (!drawing) return;
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.lineWidth   = eraserMode ? 14 : 3;
+    ctx.strokeStyle = eraserMode ? '#3d3d44' : currentColor;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+  function stopDraw() { drawing = false; }
+
+  dc.addEventListener('mousedown',  startDraw);
+  dc.addEventListener('mousemove',  doDraw);
+  dc.addEventListener('mouseup',    stopDraw);
+  dc.addEventListener('mouseleave', stopDraw);
+  dc.addEventListener('touchstart', startDraw, { passive: false });
+  dc.addEventListener('touchmove',  doDraw,    { passive: false });
+  dc.addEventListener('touchend',   stopDraw);
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, dc.width, dc.height);
+  }
+
+  // ── MODAL ──
+  let currentZone = null;
+
+  function openModal(zone) {
+    currentZone = zone;
+    const z = zones[zone];
+    document.getElementById('modal-title').textContent = z.label;
+    document.getElementById('modal-desc').textContent  = z.desc;
+    document.getElementById('name-input').value        = '';
+    clearCanvas();
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    currentZone = null;
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+  // ── SUBMIT ──
+  const avatarLayer = document.getElementById('avatar-layer');
+  const mapContainer = document.getElementById('map-container');
+  const avatars = []; // { name, zone, x, y, dataUrl }
+
+  function submitAvatar() {
+    const name = document.getElementById('name-input').value.trim();
+    if (!name) { document.getElementById('name-input').focus(); return; }
+
+    // check if canvas has any drawing
+    const blank = isCanvasBlank();
+    if (blank) { alert('Disegna il tuo avatar prima di posizionarti!'); return; }
+
+    // random position inside zone bounds
+    const b = zoneBounds[currentZone];
+    const xPct = b.xMin + Math.random() * (b.xMax - b.xMin);
+    const yPct = b.yMin + Math.random() * (b.yMax - b.yMin);
+
+    const dataUrl = dc.toDataURL();
+    placeAvatar({ name, zone: currentZone, x: xPct, y: yPct, dataUrl });
+    closeModal();
+  }
+
+  function isCanvasBlank() {
+    const d = ctx.getImageData(0, 0, dc.width, dc.height).data;
+    return !d.some(v => v !== 0);
+  }
+
+  function placeAvatar({ name, zone, x, y, dataUrl }) {
+    const dot = document.createElement('div');
+    dot.className = 'avatar-dot';
+    dot.style.left = x + '%';
+    dot.style.top  = y + '%';
+    dot.style.borderColor = zones[zone].color;
+
+    const img = new Image();
+    img.src = dataUrl;
+    const c = document.createElement('canvas');
+    c.width = 48; c.height = 48;
+    const cx = c.getContext('2d');
+    img.onload = () => { cx.drawImage(img, 0, 0, 48, 48); };
+    dot.appendChild(c);
+
+    // tooltip on hover
+    dot.addEventListener('mouseenter', (e) => showTooltip(name, zone, e));
+    dot.addEventListener('mouseleave', hideTooltip);
+
+    avatarLayer.appendChild(dot);
+    avatars.push({ name, zone, x, y, dataUrl });
+  }
+
+  // ── TOOLTIP ──
+  const tooltip = document.getElementById('tooltip');
+
+  function showTooltip(name, zone, e) {
+    tooltip.textContent = `${name} · ${zones[zone].label}`;
+    tooltip.classList.add('visible');
+    const r = mapContainer.getBoundingClientRect();
+    const dot = e.currentTarget.getBoundingClientRect();
+    tooltip.style.left = (dot.left - r.left + 24) + 'px';
+    tooltip.style.top  = (dot.top  - r.top  - 28) + 'px';
+  }
+
+  function hideTooltip() { tooltip.classList.remove('visible'); }
+</script>
+</body>
+</html>

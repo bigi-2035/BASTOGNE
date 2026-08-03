@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gli abitanti — Bastogne 2035</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #4a4a52;
+      --surface: #3d3d44;
+      --water:   #7ab3c8;
+      --plants:  #7a9e6e;
+      --build:   #c8b98a;
+      --care:    #c87a5e;
+      --text:    #f2ede4;
+      --muted:   #a09a8f;
+      --radius:  12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+    }
+    header p {
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .back {
+      display: inline-block;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid rgba(160,154,143,0.3);
+      padding-bottom: 1px;
+      transition: color 0.15s;
+    }
+    .back:hover { color: var(--text); }
+
+    /* filter tabs */
+    #filters {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .filter-btn {
+      background: transparent;
+      border: 1.5px solid rgba(242,237,228,0.15);
+      border-radius: 100px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      padding: 0.35rem 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: rgba(242,237,228,0.35); color: var(--text); }
+    .filter-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+    /* grid */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 1.25rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.25rem 1rem 1rem;
+      gap: 0.6rem;
+      transition: transform 0.15s;
+    }
+    .card:hover { transform: translateY(-3px); }
+
+    .avatar-ring {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2.5px solid var(--zone-color, var(--muted));
+      overflow: hidden;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .avatar-ring img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .card-zone {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    #empty {
+      grid-column: 1/-1;
+      text-align: center;
+      color: var(--muted);
+      padding: 4rem 0;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<a class="back" href="index.html">← Torna alla mappa</a>
+
+<header>
+  <h1>Gli abitanti</h1>
+  <p>Tutte le persone che hanno trovato il loro posto a Bastogne 2035.</p>
+</header>
+
+<div id="filters">
+  <button class="filter-btn active" data-filter="all">Tutti</button>
+  <button class="filter-btn" data-filter="acqua">Acqua</button>
+  <button class="filter-btn" data-filter="piante">Piante</button>
+  <button class="filter-btn" data-filter="strutture">Strutture</button>
+  <button class="filter-btn" data-filter="cura">Cura</button>
+</div>
+
+<div id="grid">
+  <div id="empty">Nessun abitante ancora. <a href="index.html" style="color:var(--text)">Sii il primo →</a></div>
+</div>
+
+<script>
+  const zoneColors = {
+    acqua: '#7ab3c8', piante: '#7a9e6e', strutture: '#c8b98a', cura: '#c87a5e'
+  };
+  const zoneLabels = {
+    acqua: 'Zona Acqua', piante: 'Zona Piante', strutture: 'Zona Strutture', cura: 'Zona Cura'
+  };
+
+  // In this version, avatars are stored in localStorage (session only).
+  // When you add Supabase, this will load from the database instead.
+  let avatars = [];
+  try {
+    const stored = localStorage.getItem('bastogne_avatars');
+    if (stored) avatars = JSON.parse(stored);
+  } catch(e) {}
+
+  let activeFilter = 'all';
+
+  function render() {
+    const grid = document.getElementById('grid');
+    const filtered = activeFilter === 'all' ? avatars : avatars.filter(a => a.zone === activeFilter);
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div id="empty">Nessun abitante ancora. <a href="index.html" style="color:var(--text)">Sii il primo →</a></div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(a => `
+      <div class="card">
+        <div class="avatar-ring" style="--zone-color:${zoneColors[a.zone]}">
+          <img src="${a.dataUrl}" alt="Avatar di ${a.name}" />
+        </div>
+        <div class="card-name">${a.name}</div>
+        <div class="card-zone">${zoneLabels[a.zone]}</div>
+      </div>
+    `).join('');
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>
