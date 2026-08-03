@@ -1,0 +1,744 @@
+cat > /home/claude/bastogne2035/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bastogne 2035</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #4a4a52;
+      --surface:  #3d3d44;
+      --deep:     #2e2e35;
+      --water:    #7ab3c8;
+      --plants:   #7a9e6e;
+      --build:    #c8b98a;
+      --care:     #c87a5e;
+      --text:     #f2ede4;
+      --muted:    #a09a8f;
+      --radius:   12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--deep);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* ── HEADER ── */
+    #header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      padding: 1.25rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    #header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      letter-spacing: -0.01em;
+      pointer-events: auto;
+    }
+
+    #header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      pointer-events: auto;
+    }
+
+    .header-btn {
+      background: rgba(61,61,68,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(242,237,228,0.12);
+      border-radius: 100px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .header-btn:hover {
+      background: rgba(80,80,88,0.9);
+      border-color: rgba(242,237,228,0.25);
+    }
+
+    /* ── MAP VIEWPORT ── */
+    #viewport {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      cursor: grab;
+    }
+    #viewport.grabbing { cursor: grabbing; }
+    #viewport.crosshair { cursor: crosshair; }
+
+    #map-world {
+      position: absolute;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    /* ── MAP SVG PLACEHOLDER ── */
+    /* Replace #map-svg with your real illustrated SVG */
+    #map-svg {
+      display: block;
+      width: 1400px;
+      height: 1000px;
+    }
+
+    /* ── AVATAR DOTS ── */
+    .avatar-pin {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .avatar-pin:hover { transform: translate(-50%, -50%) scale(1.15); }
+
+    .avatar-ring {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2.5px solid var(--zone-color, var(--muted));
+      overflow: hidden;
+      background: var(--deep);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
+    .avatar-ring canvas {
+      width: 100%; height: 100%;
+      display: block;
+    }
+
+    .avatar-label {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(46,46,53,0.9);
+      border: 1px solid rgba(242,237,228,0.1);
+      border-radius: 4px;
+      font-size: 0.68rem;
+      white-space: nowrap;
+      padding: 2px 6px;
+      color: var(--text);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .avatar-pin:hover .avatar-label { opacity: 1; }
+
+    /* ── ZOOM CONTROLS ── */
+    #zoom-controls {
+      position: fixed;
+      bottom: 2rem;
+      right: 1.75rem;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(61,61,68,0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(242,237,228,0.12);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .zoom-btn:hover { background: rgba(80,80,88,0.9); }
+
+    /* ── HINT PILL ── */
+    #hint {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: rgba(61,61,68,0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(242,237,228,0.12);
+      border-radius: 100px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    #hint.hidden { opacity: 0; }
+
+    /* ── MODAL DRAWER ── */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 30;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    #modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #modal {
+      background: var(--surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 1.75rem;
+      width: min(520px, 100%);
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    #modal-overlay.open #modal { transform: translateY(0); }
+
+    #modal-drag {
+      width: 36px; height: 4px;
+      background: rgba(242,237,228,0.2);
+      border-radius: 2px;
+      margin: -0.5rem auto 1.25rem;
+    }
+
+    #modal h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.35rem;
+      margin-bottom: 0.2rem;
+    }
+
+    #modal .zone-desc {
+      color: var(--muted);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+    }
+
+    #modal input[type="text"] {
+      width: 100%;
+      background: var(--deep);
+      border: 1.5px solid rgba(242,237,228,0.12);
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      margin-bottom: 1.1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #modal input[type="text"]:focus { border-color: rgba(242,237,228,0.35); }
+    #modal input[type="text"]::placeholder { color: var(--muted); }
+
+    /* draw area */
+    #draw-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 1.1rem;
+    }
+    #draw-wrap > label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      align-self: flex-start;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    #draw-canvas {
+      border-radius: 50%;
+      background: var(--deep);
+      border: 1.5px solid rgba(242,237,228,0.1);
+      cursor: crosshair;
+      touch-action: none;
+    }
+    #color-row {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .color-btn {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.1s;
+    }
+    .color-btn:hover { transform: scale(1.2); }
+    .color-btn.selected { border-color: var(--text); }
+    .tool-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .tool-btn {
+      background: var(--deep);
+      border: 1px solid rgba(242,237,228,0.12);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.75rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tool-btn:hover { color: var(--text); border-color: rgba(242,237,228,0.25); }
+
+    /* action row */
+    .btn-row { display: flex; gap: 0.65rem; }
+    .btn-primary {
+      flex: 1;
+      background: var(--text);
+      color: var(--deep);
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(242,237,228,0.15);
+      border-radius: 8px;
+      padding: 0.75rem 1.1rem;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-ghost:hover { border-color: rgba(242,237,228,0.3); color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>Bastogne 2035</h1>
+  <div id="header-right">
+    <a href="gallery.html" class="header-btn">Gli abitanti →</a>
+    <button class="header-btn" onclick="activatePlaceMode()" id="place-btn">+ Posizionati</button>
+  </div>
+</div>
+
+<!-- MAP VIEWPORT -->
+<div id="viewport">
+  <div id="map-world">
+
+    <!-- ═══════════════════════════════════════════
+         PLACEHOLDER MAP
+         Sostituisci questo SVG con la tua mappa
+         illustrata quando è pronta.
+    ═══════════════════════════════════════════ -->
+    <svg id="map-svg" viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+      <!-- ground -->
+      <rect width="1400" height="1000" fill="#3a3a42"/>
+
+      <!-- zone fills — area acqua (NW) -->
+      <ellipse cx="320" cy="260" rx="280" ry="220" fill="#2a4a5a" opacity="0.6"/>
+      <!-- zone fills — area piante (NE) -->
+      <ellipse cx="1080" cy="280" rx="260" ry="200" fill="#2a4a2a" opacity="0.6"/>
+      <!-- zone fills — strutture (centro) -->
+      <rect x="520" y="350" width="360" height="280" rx="40" fill="#3a3520" opacity="0.5"/>
+      <!-- zone fills — cura (S) -->
+      <ellipse cx="700" cy="800" rx="300" ry="160" fill="#5a2a20" opacity="0.45"/>
+
+      <!-- strade principali -->
+      <line x1="0" y1="500" x2="1400" y2="500" stroke="#2e2e35" stroke-width="18" opacity="0.7"/>
+      <line x1="700" y1="0" x2="700" y2="1000" stroke="#2e2e35" stroke-width="18" opacity="0.7"/>
+      <line x1="200" y1="0" x2="800" y2="1000" stroke="#2e2e35" stroke-width="8" opacity="0.35"/>
+      <line x1="0" y1="200" x2="1400" y2="700" stroke="#2e2e35" stroke-width="8" opacity="0.35"/>
+
+      <!-- ZONE ACQUA -->
+      <g opacity="0.75">
+        <!-- gocce (livelli acqua) -->
+        <ellipse cx="180" cy="180" rx="18" ry="24" fill="#7ab3c8"/>
+        <ellipse cx="240" cy="160" rx="28" ry="36" fill="#7ab3c8"/>
+        <ellipse cx="320" cy="150" rx="38" ry="50" fill="#7ab3c8" opacity="0.9"/>
+        <!-- cluster livello 4 -->
+        <ellipse cx="420" cy="170" rx="22" ry="28" fill="#7ab3c8"/>
+        <ellipse cx="460" cy="155" rx="22" ry="28" fill="#7ab3c8" transform="rotate(-30 460 155)"/>
+        <ellipse cx="400" cy="140" rx="22" ry="28" fill="#7ab3c8" transform="rotate(30 400 140)"/>
+        <ellipse cx="440" cy="135" rx="22" ry="28" fill="#7ab3c8" transform="rotate(-60 440 135)"/>
+        <!-- label -->
+        <text x="310" y="310" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#7ab3c8" opacity="0.8" letter-spacing="2">ACQUA</text>
+      </g>
+
+      <!-- ZONE PIANTE -->
+      <g opacity="0.75">
+        <!-- semicerchi (livelli piante) -->
+        <path d="M980,220 a30,30 0 0,1 60,0 Z" fill="#7a9e6e"/>
+        <path d="M1050,230 a30,30 0 0,1 60,0 Z" fill="#7a9e6e"/>
+        <path d="M1010,180 a30,30 0 0,1 60,0 Z" fill="#7a9e6e"/>
+        <!-- cluster livello 4 — croce di semicerchi -->
+        <path d="M1130,170 a28,28 0 0,1 56,0 Z" fill="#7a9e6e"/>
+        <path d="M1158,142 a28,28 0 0,1 56,0 Z" fill="#7a9e6e" transform="rotate(90 1186 170)"/>
+        <path d="M1130,170 a28,28 0 0,1 56,0 Z" fill="#7a9e6e" transform="rotate(180 1158 170)"/>
+        <path d="M1130,170 a28,28 0 0,1 56,0 Z" fill="#7a9e6e" transform="rotate(270 1158 170)"/>
+        <text x="1080" y="330" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#7a9e6e" opacity="0.8" letter-spacing="2">PIANTE</text>
+      </g>
+
+      <!-- ZONE STRUTTURE -->
+      <g opacity="0.75">
+        <!-- rettangoli (livelli strutture) -->
+        <rect x="580" y="390" width="50" height="10" rx="2" fill="#c8b98a"/>
+        <rect x="590" y="420" width="10" height="40" rx="2" fill="#c8b98a"/>
+        <rect x="620" y="410" width="10" height="50" rx="2" fill="#c8b98a"/>
+        <rect x="590" y="410" width="40" height="10" rx="2" fill="#c8b98a"/>
+        <!-- livello 4 — griglia # -->
+        <rect x="680" y="390" width="8" height="60" rx="2" fill="#c8b98a"/>
+        <rect x="700" y="390" width="8" height="60" rx="2" fill="#c8b98a"/>
+        <rect x="670" y="405" width="50" height="8" rx="2" fill="#c8b98a"/>
+        <rect x="670" y="425" width="50" height="8" rx="2" fill="#c8b98a"/>
+        <text x="700" y="500" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#c8b98a" opacity="0.8" letter-spacing="2">STRUTTURE</text>
+      </g>
+
+      <!-- ZONE CURA -->
+      <g opacity="0.75">
+        <!-- gocce cura (corallo) -->
+        <path d="M580,780 Q580,750 600,770 Q620,750 620,780 Q620,810 600,820 Q580,810 580,780Z" fill="#c87a5e"/>
+        <path d="M635,760 Q635,730 655,750 Q675,730 675,760 Q675,795 655,808 Q635,795 635,760Z" fill="#c87a5e"/>
+        <!-- cluster 4 — fiore -->
+        <path d="M750,760 Q750,730 770,750 Q790,730 790,760 Q790,795 770,808 Q750,795 750,760Z" fill="#c87a5e"/>
+        <path d="M750,760 Q750,730 770,750 Q790,730 790,760 Q790,795 770,808 Q750,795 750,760Z" fill="#c87a5e" transform="rotate(90 770 780)"/>
+        <path d="M750,760 Q750,730 770,750 Q790,730 790,760 Q790,795 770,808 Q750,795 750,760Z" fill="#c87a5e" transform="rotate(180 770 780)"/>
+        <path d="M750,760 Q750,730 770,750 Q790,730 790,760 Q790,795 770,808 Q750,795 750,760Z" fill="#c87a5e" transform="rotate(270 770 780)"/>
+        <text x="700" y="880" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" fill="#c87a5e" opacity="0.8" letter-spacing="2">CURA</text>
+      </g>
+
+      <!-- piazza centrale -->
+      <circle cx="700" cy="500" r="55" fill="none" stroke="#f2ede4" stroke-width="1.5" opacity="0.15"/>
+      <circle cx="700" cy="500" r="6" fill="#f2ede4" opacity="0.25"/>
+    </svg>
+
+    <!-- avatar layer (pins inserted here by JS) -->
+    <div id="avatar-layer" style="position:absolute;inset:0;pointer-events:none;"></div>
+  </div>
+</div>
+
+<!-- ZOOM CONTROLS -->
+<div id="zoom-controls">
+  <button class="zoom-btn" onclick="zoomBy(1.25)" title="Zoom in">+</button>
+  <button class="zoom-btn" onclick="zoomBy(0.8)"  title="Zoom out">−</button>
+</div>
+
+<!-- HINT -->
+<div id="hint">Trascina per esplorare · Scroll per zoomare</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="modal">
+    <div id="modal-drag"></div>
+    <h2 id="modal-title">Zona Acqua</h2>
+    <p class="zone-desc" id="modal-desc"></p>
+    <input type="text" id="name-input" placeholder="Il tuo nome" maxlength="32" />
+    <div id="draw-wrap">
+      <label>Disegna il tuo avatar</label>
+      <canvas id="draw-canvas" width="120" height="120"></canvas>
+      <div id="color-row"></div>
+      <div class="tool-row">
+        <button class="tool-btn" onclick="clearCanvas()">↺ Ricomincia</button>
+        <button class="tool-btn" id="eraser-btn" onclick="toggleEraser()">Gomma</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn-primary" onclick="submitAvatar()">Posizionami qui</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ZONE DATA ──────────────────────────────────────────
+const zones = {
+  acqua:     { label:'Zona Acqua',     desc:'Gestisci le risorse idriche del villaggio: raccolta, distribuzione, cura degli spazi acquatici condivisi.', color:'#7ab3c8', cx:320, cy:240 },
+  piante:    { label:'Zona Piante',    desc:'Coltivi orti condivisi, conosci le erbe selvatiche, ti prendi cura del verde comune.',                     color:'#7a9e6e', cx:1080, cy:270 },
+  strutture: { label:'Zona Strutture', desc:'Costruisci, ripari e mantieni gli spazi abitativi e le infrastrutture del villaggio.',                      color:'#c8b98a', cx:700,  cy:450 },
+  cura:      { label:'Zona Cura',      desc:'Ti occupi delle persone: salute, relazioni, rituali collettivi che tengono insieme la comunità.',            color:'#c87a5e', cx:700,  cy:800 },
+};
+
+// ── PAN + ZOOM ─────────────────────────────────────────
+const viewport  = document.getElementById('viewport');
+const mapWorld  = document.getElementById('map-world');
+const MAP_W = 1400, MAP_H = 1000;
+
+let tx = 0, ty = 0, scale = 1;
+let dragging = false, startX, startY, startTx, startTy;
+let placeMode = false;
+let pendingX, pendingY; // map coords for the click
+
+function applyTransform() {
+  mapWorld.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+}
+
+function clampTranslate(nx, ny) {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const minX = vw - MAP_W * scale, minY = vh - MAP_H * scale;
+  return {
+    x: Math.min(0, Math.max(minX, nx)),
+    y: Math.min(0, Math.max(minY, ny))
+  };
+}
+
+function centerMap() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  scale = Math.max(vw / MAP_W, vh / MAP_H);
+  const c = clampTranslate((vw - MAP_W * scale) / 2, (vh - MAP_H * scale) / 2);
+  tx = c.x; ty = c.y;
+  applyTransform();
+}
+centerMap();
+
+function zoomBy(factor, cx, cy) {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  cx = cx ?? vw / 2; cy = cy ?? vh / 2;
+  const newScale = Math.min(3, Math.max(0.4, scale * factor));
+  const ratio = newScale / scale;
+  const c = clampTranslate(cx - ratio * (cx - tx), cy - ratio * (cy - ty));
+  tx = c.x; ty = c.y; scale = newScale;
+  applyTransform();
+}
+
+// mouse pan
+viewport.addEventListener('mousedown', e => {
+  if (placeMode) return;
+  dragging = true;
+  startX = e.clientX; startY = e.clientY;
+  startTx = tx; startTy = ty;
+  viewport.classList.add('grabbing');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const c = clampTranslate(startTx + e.clientX - startX, startTy + e.clientY - startY);
+  tx = c.x; ty = c.y;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => { dragging = false; viewport.classList.remove('grabbing'); });
+
+// wheel zoom
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomBy(e.deltaY < 0 ? 1.1 : 0.9, e.clientX, e.clientY);
+}, { passive: false });
+
+// touch pan + pinch
+let lastTouches = null;
+viewport.addEventListener('touchstart', e => {
+  lastTouches = e.touches;
+}, { passive: true });
+viewport.addEventListener('touchmove', e => {
+  if (placeMode) return;
+  if (e.touches.length === 1 && lastTouches?.length === 1) {
+    const dx = e.touches[0].clientX - lastTouches[0].clientX;
+    const dy = e.touches[0].clientY - lastTouches[0].clientY;
+    const c = clampTranslate(tx + dx, ty + dy);
+    tx = c.x; ty = c.y; applyTransform();
+  } else if (e.touches.length === 2 && lastTouches?.length === 2) {
+    const d1 = Math.hypot(lastTouches[0].clientX - lastTouches[1].clientX, lastTouches[0].clientY - lastTouches[1].clientY);
+    const d2 = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    zoomBy(d2 / d1, cx, cy);
+  }
+  lastTouches = e.touches;
+}, { passive: true });
+
+// ── PLACE MODE ────────────────────────────────────────
+const hint = document.getElementById('hint');
+const placeBtn = document.getElementById('place-btn');
+
+function activatePlaceMode() {
+  placeMode = true;
+  viewport.classList.add('crosshair');
+  hint.textContent = 'Clicca sulla mappa per posizionarti';
+  hint.classList.remove('hidden');
+  placeBtn.textContent = '✕ Annulla';
+  placeBtn.onclick = deactivatePlaceMode;
+}
+
+function deactivatePlaceMode() {
+  placeMode = false;
+  viewport.classList.remove('crosshair');
+  hint.textContent = 'Trascina per esplorare · Scroll per zoomare';
+  setTimeout(() => hint.classList.add('hidden'), 2500);
+  placeBtn.textContent = '+ Posizionati';
+  placeBtn.onclick = activatePlaceMode;
+}
+
+// hide hint after 4s
+setTimeout(() => hint.classList.add('hidden'), 4000);
+
+// click on map in place mode
+viewport.addEventListener('click', e => {
+  if (!placeMode) return;
+  // convert viewport coords → map coords
+  const mapX = (e.clientX - tx) / scale;
+  const mapY = (e.clientY - ty) / scale;
+  pendingX = mapX;
+  pendingY = mapY;
+  // detect nearest zone
+  const zone = nearestZone(mapX, mapY);
+  openModal(zone);
+  deactivatePlaceMode();
+});
+
+function nearestZone(mx, my) {
+  let best = null, bestD = Infinity;
+  for (const [key, z] of Object.entries(zones)) {
+    const d = Math.hypot(mx - z.cx, my - z.cy);
+    if (d < bestD) { bestD = d; best = key; }
+  }
+  return best;
+}
+
+// ── PALETTE ──────────────────────────────────────────
+const palette = ['#f2ede4','#7ab3c8','#7a9e6e','#c8b98a','#c87a5e','#a09a8f','#4a4a52'];
+let currentColor = palette[0];
+let eraserMode = false;
+
+const colorRow = document.getElementById('color-row');
+palette.forEach(hex => {
+  const btn = document.createElement('button');
+  btn.className = 'color-btn' + (hex === currentColor ? ' selected' : '');
+  btn.style.background = hex;
+  btn.onclick = () => {
+    eraserMode = false;
+    document.getElementById('eraser-btn').style.opacity = '1';
+    currentColor = hex;
+    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  };
+  colorRow.appendChild(btn);
+});
+
+function toggleEraser() {
+  eraserMode = !eraserMode;
+  document.getElementById('eraser-btn').style.opacity = eraserMode ? '0.4' : '1';
+}
+
+// ── DRAW CANVAS ──────────────────────────────────────
+const dc = document.getElementById('draw-canvas');
+const ctx = dc.getContext('2d');
+let drawing = false;
+
+function getPos(e) {
+  const r = dc.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - r.left) * (dc.width / r.width), y: (src.clientY - r.top) * (dc.height / r.height) };
+}
+dc.addEventListener('mousedown',  e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+dc.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.lineWidth = eraserMode?16:3; ctx.strokeStyle = eraserMode?'#3d3d44':currentColor; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+dc.addEventListener('mouseup',    () => drawing = false);
+dc.addEventListener('mouseleave', () => drawing = false);
+dc.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive:false });
+dc.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.lineWidth=eraserMode?16:3; ctx.strokeStyle=eraserMode?'#3d3d44':currentColor; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y); }, { passive:false });
+dc.addEventListener('touchend',   () => drawing = false);
+
+function clearCanvas() { ctx.clearRect(0,0,dc.width,dc.height); }
+function isBlank() { return !ctx.getImageData(0,0,dc.width,dc.height).data.some(v=>v!==0); }
+
+// ── MODAL ────────────────────────────────────────────
+let currentZone = null;
+
+function openModal(zone) {
+  currentZone = zone;
+  const z = zones[zone];
+  document.getElementById('modal-title').textContent = z.label;
+  document.getElementById('modal-desc').textContent  = z.desc;
+  document.getElementById('name-input').value = '';
+  clearCanvas();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentZone = null;
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+// ── SUBMIT ───────────────────────────────────────────
+const avatarLayer = document.getElementById('avatar-layer');
+let avatars = [];
+
+function submitAvatar() {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) { document.getElementById('name-input').focus(); return; }
+  if (isBlank()) { alert('Disegna il tuo avatar prima di continuare!'); return; }
+
+  const dataUrl = dc.toDataURL();
+  const entry = { name, zone: currentZone, x: pendingX, y: pendingY, dataUrl };
+  placePin(entry);
+  avatars.push(entry);
+
+  // save to localStorage (temporary — Supabase verrà dopo)
+  try { localStorage.setItem('bastogne_avatars', JSON.stringify(avatars)); } catch(e){}
+
+  closeModal();
+}
+
+function placePin({ name, zone, x, y, dataUrl }) {
+  const pin = document.createElement('div');
+  pin.className = 'avatar-pin';
+  pin.style.left = x + 'px';
+  pin.style.top  = y + 'px';
+
+  const ring = document.createElement('div');
+  ring.className = 'avatar-ring';
+  ring.style.setProperty('--zone-color', zones[zone].color);
+
+  const c = document.createElement('canvas');
+  c.width = 44; c.height = 44;
+  const cx = c.getContext('2d');
+  const img = new Image();
+  img.onload = () => cx.drawImage(img, 0, 0, 44, 44);
+  img.src = dataUrl;
+  ring.appendChild(c);
+
+  const label = document.createElement('div');
+  label.className = 'avatar-label';
+  label.textContent = name + ' · ' + zones[zone].label;
+
+  pin.appendChild(ring);
+  pin.appendChild(label);
+  pin.style.pointerEvents = 'auto';
+  avatarLayer.appendChild(pin);
+}
+
+// restore saved avatars
+try {
+  const saved = JSON.parse(localStorage.getItem('bastogne_avatars') || '[]');
+  saved.forEach(a => { avatars.push(a); placePin(a); });
+} catch(e){}
+</script>
+</body>
+</html>
+HTMLEOF
