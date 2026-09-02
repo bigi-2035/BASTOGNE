@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bastogne 2035</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+medium+Display:ital@0;1&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
       --green:   #5abf2a;
@@ -20,7 +20,7 @@
       --surface: rgba(240,232,208,0.97);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width:100%; height:100%; overflow:hidden; background:var(--green); font-family:'DM Sans',sans-serif; color:var(--ink); }
+    html, body { width:100%; height:100%; overflow:hidden; background:var(--green); font-family:'Econguide',medium; color:var(--ink); }
 
     /* HEADER */
     #header {
@@ -37,7 +37,7 @@
     #header-actions { display:flex; gap:0.5rem; pointer-events:auto; }
     .pill {
       background:var(--beige); color:var(--ink); border:none;
-      border-radius:100px; font-family:'DM Sans',sans-serif;
+      border-radius:100px; font-family:'DM Sans',sans-medium;
       font-size:0.82rem; font-weight:500;
       padding:0.45rem 1.1rem; cursor:pointer; text-decoration:none;
       display:inline-flex; align-items:center;
@@ -132,7 +132,7 @@
     }
     #overlay.open #modal { transform:translateY(0); }
     .drag-handle { width:32px; height:3px; background:rgba(42,42,32,.18); border-radius:2px; margin:-0.5rem auto 1.5rem; }
-    #modal h2 { font-family:'DM Serif Display',serif; font-size:1.45rem; margin-bottom:.2rem; }
+    #modal h2 { font-family:'Econguide',medium; font-size:1.45rem; margin-bottom:.2rem; }
     .zone-sm { font-size:.75rem; font-weight:500; color:var(--muted); display:block; margin-bottom:1.35rem; }
 
     /* color picker */
@@ -152,7 +152,7 @@
     input[type=text], input[type=number], textarea {
       width:100%; background:rgba(255,255,255,.55);
       border:1.5px solid rgba(42,42,32,.12); border-radius:8px;
-      padding:.58rem .8rem; font-family:'DM Sans',sans-serif;
+      padding:.58rem .8rem; font-family:'DM Sans',sans-medium;
       font-size:.88rem; color:var(--ink); outline:none; resize:none;
       transition:border-color .15s, background .15s;
     }
@@ -165,14 +165,14 @@
     .btn-main {
       flex:1; background:var(--ink); color:var(--beige); border:none;
       border-radius:8px; padding:.78rem;
-      font-family:'DM Sans',sans-serif; font-weight:500; font-size:.88rem;
+      font-family:'DM Sans',sans-medium; font-weight:500; font-size:.88rem;
       cursor:pointer; transition:opacity .15s;
     }
     .btn-main:hover { opacity:.84; }
     .btn-sec {
       background:transparent; border:1.5px solid rgba(42,42,32,.18);
       border-radius:8px; padding:.78rem 1rem;
-      font-family:'DM Sans',sans-serif; font-size:.88rem;
+      font-family:'DM Sans',sans-medium; font-size:.88rem;
       color:var(--muted); cursor:pointer; transition:border-color .15s;
     }
     .btn-sec:hover { border-color:rgba(42,42,32,.35); }
@@ -233,10 +233,10 @@
 
       <!-- text along serpentone -->
       <path id="tp" d="M 210,738 C 420,665 730,672 1040,762 C 1350,852 1640,798 1940,828 C 2130,843 2270,908 2360,950" fill="none"/>
-      <text font-family="DM Serif Display,serif" font-size="24" fill="rgba(42,42,32,0.42)" font-style="italic">
+      <text font-family="Econguide,medium" font-size="24" fill="rgba(42,42,32,0.42)" font-style="italic">
         <textPath href="#tp" startOffset="2%">questo non è un fiume, è il centro di Bastogne 2035</textPath>
       </text>
-      <text font-family="DM Serif Display,serif" font-size="36" fill="rgba(42,42,32,0.28)" font-style="italic">
+      <text font-family="Econguide,medium" font-size="36" fill="rgba(42,42,32,0.28)" font-style="italic">
         <textPath href="#tp" startOffset="53%">c'è posto anche per te!</textPath>
       </text>
 
@@ -266,10 +266,10 @@
       <rect x="927" y="650" width="9" height="15" rx="2" fill="none" stroke="rgba(42,42,32,0.38)" stroke-width="2.5"/>
 
       <!-- zone labels -->
-      <text x="340" y="410" font-family="DM Sans,sans-serif" font-size="16" fill="#7ab3c8" opacity="0.65" font-weight="500" letter-spacing="3">ACQUA</text>
-      <text x="1080" y="190" font-family="DM Sans,sans-serif" font-size="16" fill="#7a9e6e" opacity="0.65" font-weight="500" letter-spacing="3">PIANTE</text>
-      <text x="1820" y="320" font-family="DM Sans,sans-serif" font-size="16" fill="#c8b98a" opacity="0.65" font-weight="500" letter-spacing="3">STRUTTURE</text>
-      <text x="700" y="1310" font-family="DM Sans,sans-serif" font-size="16" fill="#c87a5e" opacity="0.65" font-weight="500" letter-spacing="3">CURA</text>
+      <text x="340" y="410" font-family="DM Sans,sans-medium" font-size="16" fill="#7ab3c8" opacity="0.65" font-weight="500" letter-spacing="3">ACQUA</text>
+      <text x="1080" y="190" font-family="DM Sans,sans-medium" font-size="16" fill="#7a9e6e" opacity="0.65" font-weight="500" letter-spacing="3">PIANTE</text>
+      <text x="1820" y="320" font-family="DM Sans,sans-medium" font-size="16" fill="#c8b98a" opacity="0.65" font-weight="500" letter-spacing="3">STRUTTURE</text>
+      <text x="700" y="1310" font-family="DM Sans,sans-medium" font-size="16" fill="#c87a5e" opacity="0.65" font-weight="500" letter-spacing="3">CURA</text>
     </svg>
 
     <div id="pin-layer"></div>
