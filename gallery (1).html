@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gli abitanti — Bastogne 2035</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --green:  #5abf2a;
+      --beige:  #f0e8d0;
+      --water:  #7ab3c8;
+      --plants: #7a9e6e;
+      --build:  #c8b98a;
+      --care:   #c87a5e;
+      --ink:    #2a2a20;
+      --muted:  rgba(42,42,32,0.45);
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--green); color:var(--ink); font-family:'DM Sans',sans-serif; min-height:100vh; padding:2rem; }
+
+    header { text-align:center; margin-bottom:2.5rem; }
+    header h1 { font-family:'DM Serif Display',serif; font-size:clamp(2rem,5vw,3rem); color:var(--beige); text-shadow:0 1px 6px rgba(0,0,0,0.15); }
+    header p  { color:rgba(240,232,208,0.6); margin-top:.5rem; font-size:.9rem; }
+
+    .back {
+      display:inline-block; color:rgba(240,232,208,0.65);
+      text-decoration:none; font-size:.82rem;
+      border-bottom:1px solid rgba(240,232,208,0.25);
+      padding-bottom:1px; margin-bottom:2rem;
+      transition:color .15s;
+    }
+    .back:hover { color:var(--beige); }
+
+    #filters { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:2rem; }
+    .f-btn {
+      background:rgba(240,232,208,0.15); border:1.5px solid rgba(240,232,208,0.2);
+      border-radius:100px; color:rgba(240,232,208,0.65);
+      font-family:'DM Sans',sans-serif; font-size:.8rem;
+      padding:.38rem 1rem; cursor:pointer; transition:all .15s;
+    }
+    .f-btn:hover { background:rgba(240,232,208,0.25); color:var(--beige); }
+    .f-btn.on    { background:var(--beige); color:var(--ink); border-color:var(--beige); }
+
+    #grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+      gap:1.1rem; max-width:960px; margin:0 auto;
+    }
+
+    .card {
+      background:var(--beige); border-radius:12px;
+      padding:1.25rem 1rem 1rem;
+      display:flex; flex-direction:column; gap:.5rem;
+      transition:transform .15s;
+    }
+    .card:hover { transform:translateY(-3px); }
+
+    .avatar {
+      width:52px; height:52px; border-radius:50%;
+      border:3px solid var(--zone-color,var(--muted));
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:.2rem;
+    }
+    .avatar svg { width:26px; height:26px; }
+
+    .card-name { font-family:'DM Serif Display',serif; font-size:1rem; line-height:1.2; }
+    .card-age  { font-size:.7rem; color:var(--muted); }
+    .card-lbl  { font-size:.65rem; font-weight:500; color:var(--muted); margin-top:.35rem; }
+    .card-txt  { font-size:.78rem; line-height:1.45; }
+    .card-zone {
+      display:inline-block; font-size:.67rem; padding:.18rem .55rem;
+      border-radius:100px; color:var(--beige); font-weight:500; margin-top:.2rem;
+    }
+
+    #empty { grid-column:1/-1; text-align:center; padding:5rem 0; color:rgba(240,232,208,0.5); font-size:.9rem; }
+    #empty a { color:var(--beige); }
+  </style>
+</head>
+<body>
+<a class="back" href="index.html">← Torna alla mappa</a>
+<header>
+  <h1>Gli abitanti</h1>
+  <p>Tutte le persone che hanno trovato posto a Bastogne 2035.</p>
+</header>
+
+<div id="filters">
+  <button class="f-btn on" data-f="all">Tutti</button>
+  <button class="f-btn" data-f="acqua">Acqua</button>
+  <button class="f-btn" data-f="piante">Piante</button>
+  <button class="f-btn" data-f="strutture">Strutture</button>
+  <button class="f-btn" data-f="cura">Cura</button>
+</div>
+
+<div id="grid"></div>
+
+<script>
+const ZONES = {
+  acqua:     { label:'Zona Acqua',     color:'#7ab3c8' },
+  piante:    { label:'Zona Piante',    color:'#7a9e6e' },
+  strutture: { label:'Zona Strutture', color:'#c8b98a' },
+  cura:      { label:'Zona Cura',      color:'#c87a5e' },
+};
+
+function avatarSVG(bg, fg) {
+  return `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="6.5" r="3.8" fill="${fg}"/>
+    <path d="M3.5 18 Q3.5 12 10 12 Q16.5 12 16.5 18Z" fill="${fg}"/>
+  </svg>`;
+}
+
+let entries=[], activeFilter='all';
+try { entries=JSON.parse(localStorage.getItem('b2035_pins')||'[]'); } catch(e){}
+
+function render() {
+  const grid=document.getElementById('grid');
+  const list=activeFilter==='all'?entries:entries.filter(e=>e.zone===activeFilter);
+  if(!list.length) {
+    grid.innerHTML='<div id="empty">Nessun abitante ancora. <a href="index.html">Sii il primo →</a></div>';
+    return;
+  }
+  grid.innerHTML=list.map(e=>{
+    const z=ZONES[e.zone];
+    const fg=(e.color==='#f0e8d0'||e.color==='#c8b98a')?'rgba(42,42,32,0.7)':'#f0e8d0';
+    return `<div class="card">
+      <div class="avatar" style="background:${e.color};--zone-color:${z.color};border-color:${z.color}">
+        ${avatarSVG(e.color,fg)}
+      </div>
+      <div class="card-name">${e.name}</div>
+      ${e.age?`<div class="card-age">${e.age} anni</div>`:''}
+      <div class="card-lbl">Offre</div>
+      <div class="card-txt">${e.skill}</div>
+      ${e.want?`<div class="card-lbl">Cerca</div><div class="card-txt">${e.want}</div>`:''}
+      <span class="card-zone" style="background:${z.color}">${z.label}</span>
+    </div>`;
+  }).join('');
+}
+
+document.querySelectorAll('.f-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    activeFilter=btn.dataset.f;
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
