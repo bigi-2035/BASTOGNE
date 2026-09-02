@@ -30,7 +30,7 @@
       pointer-events:none;
     }
     #header h1 {
-      font-family:'DM Serif Display',serif; font-size:1.6rem;
+      font-family:'Econguide',medium; font-size:1.6rem;
       color:var(--beige); letter-spacing:-0.01em;
       text-shadow:0 1px 6px rgba(0,0,0,0.18); pointer-events:auto;
     }
@@ -89,7 +89,7 @@
       content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
       border:7px solid transparent; border-top-color:var(--surface);
     }
-    .pc-name { font-family:'DM Serif Display',serif; font-size:.95rem; line-height:1.2; margin-bottom:.1rem; }
+    .pc-name { font-family:'Econguide',medium; font-size:.95rem; line-height:1.2; margin-bottom:.1rem; }
     .pc-age  { font-size:.7rem; color:var(--muted); margin-bottom:.6rem; }
     .pc-lbl  { font-size:.65rem; font-weight:500; color:var(--muted); margin-bottom:.18rem; letter-spacing:.04em; }
     .pc-txt  { font-size:.78rem; line-height:1.45; color:var(--ink); margin-bottom:.5rem; }
@@ -184,7 +184,7 @@
   <h1>Bastogne 2035</h1>
   <div id="header-actions">
     <a href="gallery.html" class="pill">Gli abitanti</a>
-    <button class="pill dark" id="join-btn" onclick="startPlace()">Trovami un posto</button>
+    <button class="pill dark" id="join-btn" onclick="startPlace()">Scegli il tuo posto</button>
   </div>
 </div>
 
@@ -281,7 +281,7 @@
   <button class="zoom-btn" onclick="zoomBy(0.83)">−</button>
 </div>
 
-<div id="hint">Esplora la mappa · Scroll per zoomare</div>
+<div id="hint">Esplora la mappa · zoom in and zoom out</div>
 
 <div id="overlay" onclick="overlayClick(event)">
   <div id="modal">
@@ -418,7 +418,7 @@ function cancelPlace() {
   vp.classList.remove('place');
   hint.textContent='Esplora la mappa · Scroll per zoomare';
   setTimeout(()=>hint.classList.add('out'),3200);
-  joinBtn.textContent='Trovami un posto';
+  joinBtn.textContent='Scegli il tuo posto';
   joinBtn.onclick=startPlace;
 }
 setTimeout(()=>hint.classList.add('out'),4200);
