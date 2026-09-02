@@ -89,10 +89,10 @@
     .zone:hover { opacity: 0.6; }
     .zone.active { opacity: 0.9; }
 
-    .zone[data-zone="acqua"]     { background: color-mix(in srgb, var(--water) 30%, var(--surface)); }
-    .zone[data-zone="piante"]    { background: color-mix(in srgb, var(--plants) 30%, var(--surface)); }
-    .zone[data-zone="strutture"] { background: color-mix(in srgb, var(--build) 30%, var(--surface)); }
-    .zone[data-zone="cura"]      { background: color-mix(in srgb, var(--care) 30%, var(--surface)); }
+    .zone[data-zone="cucinare"]     { background: color-mix(in srgb, var(--cook) 30%, var(--surface)); }
+    .zone[data-zone="coltivare"]    { background: color-mix(in srgb, var(--grow) 30%, var(--surface)); }
+    .zone[data-zone="abitare"] { background: color-mix(in srgb, var(--live) 30%, var(--surface)); }
+    .zone[data-zone="costruire"]      { background: color-mix(in srgb, var(--build) 30%, var(--surface)); }
 
     .zone-icon { font-size: 2rem; }
     .zone-label {
@@ -337,33 +337,33 @@
 
 <header>
   <h1>Bastogne 2035</h1>
-  <p>Scegli una zona della città e lascia il tuo segno — il tuo avatar si unirà a chi abita già quel luogo.</p>
+  <p>Scegli una zona della città e prendi il tuo post — unisciti a chi abita già la città.</p>
 </header>
 
 <div id="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:var(--water)"></div> Acqua</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--plants)"></div> Piante</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--build)"></div> Strutture</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--care)"></div> Cura</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--cook)"></div> cucinare</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--grow)"></div> coltivare</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--live)"></div> abitare</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--build)"></div> costruire</div>
 </div>
 
 <div id="map-container">
   <div id="map-bg">
-    <div class="zone" data-zone="acqua"     onclick="openModal('acqua')">
+    <div class="zone" data-zone="cucinare"     onclick="openModal('cucinare')">
       <div class="zone-icon">💧</div>
-      <div class="zone-label">Acqua</div>
+      <div class="zone-label">Cucinare</div>
     </div>
-    <div class="zone" data-zone="piante"    onclick="openModal('piante')">
+    <div class="zone" data-zone="coltivare"    onclick="openModal('coltivare')">
       <div class="zone-icon">🌿</div>
-      <div class="zone-label">Piante</div>
+      <div class="zone-label">Coltivare</div>
     </div>
-    <div class="zone" data-zone="strutture" onclick="openModal('strutture')">
+    <div class="zone" data-zone="abitare" onclick="openModal('abitare')">
       <div class="zone-icon">🪵</div>
-      <div class="zone-label">Strutture</div>
+      <div class="zone-label">Abitare</div>
     </div>
-    <div class="zone" data-zone="cura"      onclick="openModal('cura')">
+    <div class="zone" data-zone="costruire"      onclick="openModal('costruire')">
       <div class="zone-icon">🌸</div>
-      <div class="zone-label">Cura</div>
+      <div class="zone-label">Costruire</div>
     </div>
   </div>
   <div id="avatar-layer"></div>
@@ -383,7 +383,7 @@
     <input type="text" id="name-input" placeholder="Il tuo nome" maxlength="32" />
 
     <div id="draw-wrap">
-      <label>Disegna il tuo avatar</label>
+      <label>Racconta chi sei</label>
       <canvas id="draw-canvas" width="120" height="120"></canvas>
       <div id="color-row"></div>
       <div class="tool-row">
